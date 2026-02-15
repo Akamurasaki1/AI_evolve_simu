@@ -3,21 +3,72 @@
 
     <head>
         <meta charset="UTF-8">
-        <title>A/B 選好テスト（最小版）</title>
+        <title>A/B 選好テスト</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                max-width: 800px;
+                margin: 20px auto;
+                padding: 20px;
+            }
+            .status-section {
+                background-color: #f0f0f0;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .control-buttons {
+                margin: 20px 0;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 5px;
+                font-size: 14px;
+                cursor: pointer;
+            }
+            .pair-section {
+                margin: 20px 0;
+            }
+            pre {
+                background-color: #f5f5f5;
+                padding: 15px;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            #button-evolve {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+            }
+        </style>
     </head>
 
     <body>
-        <h1>A/B 選好テスト</h1>
+        <h1>A/B 選好テスト（世代進化版）</h1>
 
-        <p id="status">まだ読み込んでいません</p>
+        <div class="status-section">
+            <h2>ステータス</h2>
+            <p id="generation-status">読み込み中...</p>
+            <p id="status">まだ読み込んでいません</p>
+        </div>
 
-        <p>A:</p>
-        <pre id="text-a"></pre>
-        <button id="button-a">A を選ぶ</button>
+        <div class="control-buttons">
+            <button id="button-fetch">ペアを取得する</button>
+            <button id="button-evolve" style="display: none;">世代を進める</button>
+        </div>
 
-        <p>B:</p>
-        <pre id="text-b"></pre>
-        <button id="button-b">B を選ぶ</button>
+        <div class="pair-section">
+            <h3>A:</h3>
+            <pre id="text-a">（まだ読み込まれていません）</pre>
+            <button id="button-a">A を選ぶ</button>
+
+            <h3>B:</h3>
+            <pre id="text-b">（まだ読み込まれていません）</pre>
+            <button id="button-b">B を選ぶ</button>
+        </div>
+
         <script src="chose_api.js"></script>
     </body>
 

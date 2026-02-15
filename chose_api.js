@@ -1,5 +1,40 @@
 const API_BASE = "http://localhost:8000";  // FastAPI のURL
 let currentPair = null;
+let currentGeneration = 0;
+let currentEvalCount = 0;
+let evalsPerGen = 100;
+
+// Update the status display
+function updateStatusDisplay() {
+    const statusText = `世代: ${currentGeneration} / 評価回数: ${currentEvalCount} / ${evalsPerGen}`;
+    document.getElementById("generation-status").textContent = statusText;
+    
+    // Show/hide evolve button based on evaluation count
+    const evolveButton = document.getElementById("button-evolve");
+    if (currentEvalCount >= evalsPerGen) {
+        evolveButton.style.display = "inline-block";
+    } else {
+        evolveButton.style.display = "none";
+    }
+}
+
+// Fetch status from server
+async function fetchStatus() {
+    try {
+        const res = await fetch(API_BASE + "/status");
+        if (!res.ok) {
+            throw new Error("サーバーエラー");
+        }
+        const data = await res.json();
+        currentGeneration = data.generation;
+        currentEvalCount = data.eval_count;
+        evalsPerGen = data.evals_per_gen;
+        updateStatusDisplay();
+    } catch (e) {
+        console.error(e);
+        document.getElementById("status").textContent = "ステータスの取得に失敗しました";
+    }
+}
 
 async function fetchPair() {
     document.getElementById("status").textContent = "ペアを読み込み中...";
@@ -40,6 +75,14 @@ async function sendChoice(chosen) {
         if (!res.ok) {
             throw new Error("送信エラー");
         }
+        const data = await res.json();
+        
+        // Update local state from response
+        currentGeneration = data.generation;
+        currentEvalCount = data.eval_count;
+        evalsPerGen = data.evals_per_gen;
+        updateStatusDisplay();
+        
         // 次のペアを取得
         fetchPair();
     } catch (e) {
@@ -48,8 +91,40 @@ async function sendChoice(chosen) {
     }
 }
 
+async function evolveGeneration() {
+    document.getElementById("status").textContent = "世代を進化中...";
+    try {
+        const res = await fetch(API_BASE + "/evolve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        if (!res.ok) {
+            throw new Error("進化エラー");
+        }
+        const data = await res.json();
+        
+        // Update status from response
+        currentGeneration = data.new_generation;
+        currentEvalCount = 0;
+        updateStatusDisplay();
+        
+        document.getElementById("status").textContent = 
+            `世代 ${data.old_generation} → ${data.new_generation} に進化しました！`;
+        
+        // Fetch a new pair from the new generation
+        fetchPair();
+    } catch (e) {
+        console.error(e);
+        document.getElementById("status").textContent = "進化に失敗しました";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("button-a").addEventListener("click", () => sendChoice("A"));
     document.getElementById("button-b").addEventListener("click", () => sendChoice("B"));
-    fetchPair();  // 最初のペアを読み込む
+    document.getElementById("button-fetch").addEventListener("click", fetchPair);
+    document.getElementById("button-evolve").addEventListener("click", evolveGeneration);
+    
+    // Initialize status on page load
+    fetchStatus();
 });
