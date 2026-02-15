@@ -3,6 +3,8 @@ import json
 from dataclasses import asdict
 from typing import List
 from datetime import datetime, timezone
+from typing import Optional
+
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -48,6 +50,7 @@ class LogEntry(BaseModel):
     indiv_a_id: int
     indiv_b_id: int
     chosen: str
+    timestamp: Optional[str] = None  # ← これを追加（ISO 8601 の文字列）
 
 @app.get("/debug/logs", response_model=List[LogEntry])
 def get_logs(limit: int = 100):
