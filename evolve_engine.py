@@ -1,7 +1,8 @@
 import random
 from dataclasses import dataclass
 from typing import List, Dict, Literal
-
+from typing import Optional
+from pydantic import BaseModel  # か dataclass か、実際の定義に合わせて
 
 # 個体
 @dataclass
