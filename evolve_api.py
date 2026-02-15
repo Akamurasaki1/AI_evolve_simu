@@ -2,6 +2,7 @@ import random
 import json
 from dataclasses import asdict
 from typing import List
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -134,7 +135,9 @@ def get_pair():
         indiv_a=IndivInfo(id=a.id, text=a.text),
         indiv_b=IndivInfo(id=b.id, text=b.text),
     )
-
+    
+def now_iso_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 @app.post("/choice")
 def post_choice(req: ChoiceRequest):
@@ -148,6 +151,8 @@ def post_choice(req: ChoiceRequest):
         indiv_a_id=req.indiv_a_id,
         indiv_b_id=req.indiv_b_id,
         chosen=req.chosen,
+        timestamp=now_iso_utc(),  # ← ここを追加
+      
     )
     append_pairlog_to_file(log)
     
