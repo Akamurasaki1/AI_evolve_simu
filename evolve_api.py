@@ -38,6 +38,8 @@ next_pair_id = 0
 LOG_PATH = "pair_logs.jsonl"
 
 # Generation state management
+# Note: This implementation is designed for single-user evaluation sessions.
+# For multi-user concurrent access, consider adding threading.Lock() for thread safety.
 EVALS_PER_GEN = 100  # Configurable: number of evaluations per generation
 current_generation = 0
 current_eval_count = 0
@@ -85,7 +87,7 @@ def load_logs_from_file(path: str = LOG_PATH) -> List[PairLog]:
 def clear_logs_file(path: str = LOG_PATH) -> None:
     """Clear the log file by truncating it."""
     with open(path, "w", encoding="utf-8") as f:
-        f.write("")
+        pass  # File is truncated when opened in write mode
 
 
 @app.get("/pair", response_model=PairResponse)
