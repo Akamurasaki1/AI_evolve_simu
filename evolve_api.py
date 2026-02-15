@@ -27,6 +27,19 @@ from evolve_engine import (
 
 
 app = FastAPI()
+
+# CORS制限でfetchがブロックされている可能性があるのでこれで制限をゆるくする
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],      # 最初は全部許可でOK。あとで必要なら絞る
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# シンプルにメモリに現世代を持つ（起動時だけ初期化）
+current_population: List[Individual] = initialize_population(size=200, generation=0)
+next_pair_id = 0
+
 LOG_PATH = Path("pair_logs.jsonl")
 
 class LogEntry(BaseModel):
@@ -51,19 +64,6 @@ def get_logs(limit: int = 100):
                     continue
     # 最後の limit 件だけ返す
     return logs[-limit:]
-# CORS制限でfetchがブロックされている可能性があるのでこれで制限をゆるくする
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],      # 最初は全部許可でOK。あとで必要なら絞る
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-# シンプルにメモリに現世代を持つ（起動時だけ初期化）
-current_population: List[Individual] = initialize_population(size=200, generation=0)
-next_pair_id = 0
-
-LOG_PATH = "pair_logs.jsonl"
 
 # Generation state management
 # Note: This implementation is designed for single-user evaluation sessions.
