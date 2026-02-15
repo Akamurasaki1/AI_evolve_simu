@@ -2,7 +2,7 @@ import random
 import json
 from dataclasses import asdict
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
@@ -139,8 +139,13 @@ def get_pair():
         indiv_b=IndivInfo(id=b.id, text=b.text),
     )
     
-def now_iso_utc() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def now_iso_jst() -> str:
+    """
+    現在時刻を日本時間(UTC+9)のISO 8601形式で返す。
+    例: 2026-02-15T21:54:30.759757+09:00
+    """
+    jst = timezone(timedelta(hours=9))
+    return datetime.now(jst).isoformat()
 
 @app.post("/choice")
 def post_choice(req: ChoiceRequest):
@@ -154,7 +159,7 @@ def post_choice(req: ChoiceRequest):
         indiv_a_id=req.indiv_a_id,
         indiv_b_id=req.indiv_b_id,
         chosen=req.chosen,
-        timestamp=now_iso_utc(),  # ← ここを追加
+        timestamp=now_iso_jtc(),  # ← ここを追加
       
     )
     append_pairlog_to_file(log)
