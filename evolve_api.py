@@ -159,7 +159,7 @@ def post_choice(req: ChoiceRequest):
         indiv_a_id=req.indiv_a_id,
         indiv_b_id=req.indiv_b_id,
         chosen=req.chosen,
-        timestamp=now_iso_jtc(),  # ← ここを追加
+        timestamp=now_iso_jst(),  # ← ここを追加
       
     )
     append_pairlog_to_file(log)
