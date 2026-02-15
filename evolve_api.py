@@ -6,6 +6,7 @@ from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
 # 進化エンジンから import
 from evolve_engine import (
@@ -22,7 +23,34 @@ from evolve_engine import (
 # API の定義
 # ============
 
+
+
+
 app = FastAPI()
+LOG_PATH = Path("pair_logs.jsonl")
+
+class LogEntry(BaseModel):
+    pair_id: int
+    indiv_a_id: int
+    indiv_b_id: int
+    chosen: str
+
+@app.get("/debug/logs", response_model=List[LogEntry])
+def get_logs(limit: int = 100):
+    logs = []
+    if LOG_PATH.exists():
+        with LOG_PATH.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    d = json.loads(line)
+                    logs.append(d)
+                except Exception:
+                    continue
+    # 最後の limit 件だけ返す
+    return logs[-limit:]
 # CORS制限でfetchがブロックされている可能性があるのでこれで制限をゆるくする
 app.add_middleware(
     CORSMiddleware,
