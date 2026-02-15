@@ -25,6 +25,7 @@ class PairLog:
     indiv_a_id: int
     indiv_b_id: int
     chosen: Choice
+    timestamp: Optional[str] = None  # ← これを追加（ISO 8601 の文字列）
 
 
 # 文字集合
