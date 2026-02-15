@@ -1,4 +1,4 @@
-const API_BASE = "https://ai-evolve-simu-api.onrender.com";  //"http://localhost:8000";  // FastAPI のURL
+const API_BASE = "https://evoapi.akamu.xyz"; //"https://ai-evolve-simu-api.onrender.com";  //"http://localhost:8000";  // FastAPI のURL
 let currentPair = null;
 let currentGeneration = 0;
 let currentEvalCount = 0;
