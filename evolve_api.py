@@ -187,6 +187,92 @@ def get_status():
     }
 
 
+# ============
+# Generation Snapshot Management
+# ============
+
+SNAPSHOTS_DIR = Path("generation_snapshots")
+
+
+def save_generation_snapshot(population: List[Individual], generation: int) -> None:
+    """
+    Save a snapshot of the current generation to a JSON file.
+    
+    The snapshot includes:
+    - generation number
+    - timestamp (JST)
+    - population (list of individuals with all their data)
+    - metadata (population size, statistics)
+    """
+    SNAPSHOTS_DIR.mkdir(exist_ok=True)
+    
+    # Compute statistics
+    total_individuals = len(population)
+    avg_fitness = sum(ind.fitness for ind in population) / total_individuals if total_individuals > 0 else 0.0
+    total_wins = sum(ind.wins for ind in population)
+    total_losses = sum(ind.losses for ind in population)
+    
+    # Build snapshot
+    snapshot = {
+        "generation": generation,
+        "timestamp": now_iso_jst(),
+        "metadata": {
+            "population_size": total_individuals,
+            "total_wins": total_wins,
+            "total_losses": total_losses,
+            "avg_fitness": avg_fitness,
+        },
+        "population": [asdict(ind) for ind in population]
+    }
+    
+    # Save to file
+    snapshot_file = SNAPSHOTS_DIR / f"gen{generation}.json"
+    with open(snapshot_file, "w", encoding="utf-8") as f:
+        json.dump(snapshot, f, ensure_ascii=False, indent=2)
+
+
+def load_generation_snapshot(generation: int) -> dict:
+    """Load a generation snapshot from disk."""
+    snapshot_file = SNAPSHOTS_DIR / f"gen{generation}.json"
+    if not snapshot_file.exists():
+        return None
+    
+    with open(snapshot_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/snapshots")
+def list_snapshots():
+    """
+    List all available generation snapshots.
+    """
+    if not SNAPSHOTS_DIR.exists():
+        return {"snapshots": []}
+    
+    snapshots = []
+    for snapshot_file in sorted(SNAPSHOTS_DIR.glob("gen*.json")):
+        # Extract generation number from filename
+        gen_num = int(snapshot_file.stem.replace("gen", ""))
+        snapshots.append({
+            "generation": gen_num,
+            "filename": snapshot_file.name,
+        })
+    
+    return {"snapshots": snapshots}
+
+
+@app.get("/snapshots/{generation}")
+def get_snapshot(generation: int):
+    """
+    Retrieve a specific generation snapshot.
+    """
+    snapshot = load_generation_snapshot(generation)
+    if snapshot is None:
+        return {"error": f"Snapshot for generation {generation} not found"}, 404
+    
+    return snapshot
+
+
 @app.post("/evolve")
 def post_evolve():
     """
@@ -195,9 +281,10 @@ def post_evolve():
     Steps:
     1. Load all logs from pair_logs.jsonl
     2. Aggregate results to update wins/losses
-    3. Evolve the population using evolve_one_generation
-    4. Update server state (generation, eval_count, population)
-    5. Clear the log file for the new generation
+    3. Save current generation snapshot before evolving
+    4. Evolve the population using evolve_one_generation
+    5. Update server state (generation, eval_count, population)
+    6. Clear the log file for the new generation
     """
     global current_population, current_generation, current_eval_count
     
@@ -206,6 +293,9 @@ def post_evolve():
     
     # Aggregate results to update wins/losses
     aggregate_results_from_logs(current_population, logs)
+    
+    # Save snapshot of current generation before evolving
+    save_generation_snapshot(current_population, current_generation)
     
     # Calculate evolution parameters
     population_size = len(current_population)

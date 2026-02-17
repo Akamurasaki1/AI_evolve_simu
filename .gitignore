@@ -27,3 +27,6 @@ Thumbs.db
 *.log
 
 # Local data files (keep pair_logs.jsonl tracked for now)
+
+# Generation snapshots
+generation_snapshots/
