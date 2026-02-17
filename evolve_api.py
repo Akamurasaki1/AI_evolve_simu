@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -204,31 +204,39 @@ def save_generation_snapshot(population: List[Individual], generation: int) -> N
     - population (list of individuals with all their data)
     - metadata (population size, statistics)
     """
-    SNAPSHOTS_DIR.mkdir(exist_ok=True)
-    
-    # Compute statistics
-    total_individuals = len(population)
-    avg_fitness = sum(ind.fitness for ind in population) / total_individuals if total_individuals > 0 else 0.0
-    total_wins = sum(ind.wins for ind in population)
-    total_losses = sum(ind.losses for ind in population)
-    
-    # Build snapshot
-    snapshot = {
-        "generation": generation,
-        "timestamp": now_iso_jst(),
-        "metadata": {
-            "population_size": total_individuals,
-            "total_wins": total_wins,
-            "total_losses": total_losses,
-            "avg_fitness": avg_fitness,
-        },
-        "population": [asdict(ind) for ind in population]
-    }
-    
-    # Save to file
-    snapshot_file = SNAPSHOTS_DIR / f"gen{generation}.json"
-    with open(snapshot_file, "w", encoding="utf-8") as f:
-        json.dump(snapshot, f, ensure_ascii=False, indent=2)
+    try:
+        SNAPSHOTS_DIR.mkdir(exist_ok=True)
+        
+        # Compute statistics
+        total_individuals = len(population)
+        if total_individuals == 0:
+            avg_fitness = 0.0
+        else:
+            avg_fitness = sum(ind.fitness for ind in population) / total_individuals
+        
+        total_wins = sum(ind.wins for ind in population)
+        total_losses = sum(ind.losses for ind in population)
+        
+        # Build snapshot
+        snapshot = {
+            "generation": generation,
+            "timestamp": now_iso_jst(),
+            "metadata": {
+                "population_size": total_individuals,
+                "total_wins": total_wins,
+                "total_losses": total_losses,
+                "avg_fitness": avg_fitness,
+            },
+            "population": [asdict(ind) for ind in population]
+        }
+        
+        # Save to file
+        snapshot_file = SNAPSHOTS_DIR / f"gen{generation}.json"
+        with open(snapshot_file, "w", encoding="utf-8") as f:
+            json.dump(snapshot, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        # Log error but don't crash the evolution process
+        print(f"Warning: Failed to save generation snapshot for gen{generation}: {e}")
 
 
 def load_generation_snapshot(generation: int) -> dict:
@@ -268,7 +276,10 @@ def get_snapshot(generation: int):
     """
     snapshot = load_generation_snapshot(generation)
     if snapshot is None:
-        return {"error": f"Snapshot for generation {generation} not found"}, 404
+        raise HTTPException(
+            status_code=404,
+            detail=f"Snapshot for generation {generation} not found"
+        )
     
     return snapshot
 
